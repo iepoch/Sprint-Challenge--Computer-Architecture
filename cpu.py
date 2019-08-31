@@ -64,12 +64,12 @@ class CPU:
 
     def op_push(self,  operand_a, operand_b):
         self.SP -= 1
-        index = self.ram[operand_a]
-        self.ram[self.SP] = index
+        value = self.reg[operand_a]
+        self.ram[self.SP] = value
 
     def op_pop(self, operand_a, operand_b):
-        index = self.ram[self.SP]
-        self.reg[operand_a] = index
+        val = self.ram[self.SP]
+        self.reg[operand_a] = val
         self.SP += 1
 
     def op_ret(self, operand_a, operand_b):
@@ -79,9 +79,8 @@ class CPU:
 
     def op_call(self, operand_a, operand_b):
         self.SP -= 1
-        self.ram[self.reg[self.SP]] = self.reg[operand_a]
-        # address = self.pc + 2
-        # self.ram[self.SP] = address
+        address = self.pc
+        self.ram[self.SP] = address
         sub_val = self.ram[operand_a]
         self.SP = sub_val
 
@@ -89,11 +88,11 @@ class CPU:
         self.pc = self.reg[operand_a]
 
     def op_jeq(self, operand_a, operand_b):
-        if self.fl == 0b00000010:
+        if self.fl == self.reg[operand_a]:
             self.pc = self.reg[operand_a]
 
     def op_jne(self, operand_a, operand_b):
-        if self.fl != 0b00000010:
+        if self.fl != self.reg[operand_a]:
             self.pc = self.reg[operand_a]
 
     def op_prn(self, address, operand_b):
@@ -192,7 +191,6 @@ class CPU:
         """Run the CPU."""
         while not self.op_hlt:
             ir = self.ram[self.pc]
-            print(ir)
 
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
