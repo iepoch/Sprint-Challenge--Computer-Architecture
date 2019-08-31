@@ -24,7 +24,6 @@ class CPU:
         self.pc = 0
         self.reg = [0] * 8
         self.op_hlt = False
-        self.reg[7] = 0xF3
         self.SP = 7  # stack pointer
         self.fl = None
 
@@ -53,8 +52,18 @@ class CPU:
     def op_mul(self, operand_a, operand_b):
         self.alu('MUL', operand_a, operand_b)
 
-    def op_cmp(self, operand_a, operand_b):
-        self.alu('CMP', operand_a, operand_b)
+    def op_cmp(self, reg_a, reg_b):
+        a = self.reg[reg_a]
+        b = self.reg[reg_b]
+
+        if a == b:
+            self.fl = self.fl | 0b01
+        elif a < b:
+            self.fl = self.fl | 0b100
+        elif a > b:
+            self.fl = self.fl | 0b10
+        else:
+            self.fl = self.fl | 0b0
 
     def op_halt(self, address, value):
         self.op_hlt = True
@@ -72,28 +81,28 @@ class CPU:
         self.reg[operand_a] = val
         self.SP += 1
 
-    def op_ret(self, operand_a, operand_b):
-        address = self.ram[self.SP]
-        self.pc = address
-        self.SP += 1
-
     def op_call(self, operand_a, operand_b):
-        self.SP -= 1
-        address = self.pc
-        self.ram[self.SP] = address
-        sub_val = self.ram[operand_a]
-        self.SP = sub_val
+        self.op_push(operand_a, operand_b)
+        self.ram[self.SP] = self.pc + 2
+        self.pc = self.reg[operand_a]
+
+    def op_ret(self, operand_a, operand_b):
+        self.pc = self.ram[self.SP]
 
     def op_jmp(self, operand_a, operand_b):
         self.pc = self.reg[operand_a]
 
     def op_jeq(self, operand_a, operand_b):
-        if self.fl == self.reg[operand_a]:
-            self.pc = self.reg[operand_a]
+        if (self.fl & 0b1):
+            self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
 
     def op_jne(self, operand_a, operand_b):
-        if self.fl != self.reg[operand_a]:
-            self.pc = self.reg[operand_a]
+        if not (self.fl & 0b1):
+            self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
 
     def op_prn(self, address, operand_b):
         print(self.reg[address])
@@ -130,8 +139,9 @@ class CPU:
         # for instruction in program:
         #     self.ram[address] = instruction
         #     address += 1
-
+        self.trace()
         with open(filename) as file:
+
             for line in file:
                 comment_split = line.split('#')
                 instruction = comment_split[0]
@@ -154,16 +164,6 @@ class CPU:
         # elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
-        elif op == "CMP":
-            a = self.reg[reg_a]
-            b = self.reg[reg_b]
-
-            if a == b:
-                self.fl = 0b00000010
-            elif a < b:
-                self.fl = 0b00000100
-            elif a > b:
-                self.fl = 0b00000001
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -200,6 +200,9 @@ class CPU:
 
             if ir in self.ins:
                 self.ins[ir](operand_a, operand_b)
+            else:
+                print(f"Error: Instruction {ir} not found")
+                exit()
 
             if not ins_set:
                 self.pc += op_size + 1
