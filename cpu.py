@@ -10,6 +10,8 @@ POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
 JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
 
 
 class CPU:
@@ -35,6 +37,7 @@ class CPU:
             CALL: self.op_call,
             RET: self.op_ret,
             JMP: self.op_jmp,
+            JEQ: self.op_jeq,
             PRN: self.op_prn,
         }
 
@@ -78,6 +81,14 @@ class CPU:
 
     def op_jmp(self, operand_a, operand_b):
         self.pc = self.reg[operand_a]
+
+    def op_jeq(self, operand_a, operand_b):
+        if self.fl == 0b00000010:
+            self.pc = self.reg[operand_a]
+
+    def op_jne(self, operand_a, operand_b):
+        if self.fl != 0b00000010:
+            self.pc = self.reg[operand_a]
 
     def op_prn(self, address, operand_b):
         print(self.reg[address])
