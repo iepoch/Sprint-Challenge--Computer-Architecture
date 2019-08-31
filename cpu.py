@@ -9,6 +9,7 @@ PUSH = 0b01000101
 POP = 0b01000110
 CALL = 0b01010000
 RET = 0b00010001
+CMP = 0b10100111
 JMP = 0b01010100
 JEQ = 0b01010101
 JNE = 0b01010110
@@ -32,6 +33,7 @@ class CPU:
             HLT: self.op_halt,
             LDI: self.op_ldi,
             MUL: self.op_mul,
+            CMP: self.op_cmp,
             PUSH: self.op_push,
             POP: self.op_pop,
             CALL: self.op_call,
@@ -39,6 +41,7 @@ class CPU:
             JMP: self.op_jmp,
             JEQ: self.op_jeq,
             PRN: self.op_prn,
+
         }
 
     def ram_read(self, address):
@@ -49,6 +52,9 @@ class CPU:
 
     def op_mul(self, operand_a, operand_b):
         self.alu('MUL', operand_a, operand_b)
+
+    def op_cmp(self, operand_a, operand_b):
+        self.alu('CMP', operand_a, operand_b)
 
     def op_halt(self, address, value):
         self.op_hlt = True
@@ -98,6 +104,34 @@ class CPU:
 
         address = 0
 
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,10
+        #     0b00000000,
+        #     0b00001010,
+        #     0b10000010,  # LDI R1,20
+        #     0b00000001,
+        #     0b00010100,
+        #     0b10000010,  # LDI R2,TEST1
+        #     0b00000010,
+        #     0b00010011,
+        #     0b10100111,  # CMP R0,R1
+        #     0b00000000,
+        #     0b00000001,
+        #     0b01010101,  # JEQ R2
+        #     0b00000010,
+        #     0b10000010,  # LDI R3,1
+        #     0b00000011,
+        #     0b00000001,
+        #     0b01000111,  # PRN R3
+        #     0b00000011,
+        #     0b00000001,  # HLT
+        # ]
+
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
+
         with open(filename) as file:
             for line in file:
                 comment_split = line.split('#')
@@ -105,7 +139,6 @@ class CPU:
 
                 if instruction == '':
                     continue
-                # print(instruction)
 
                 first_bit = instruction[0]
 
@@ -122,7 +155,7 @@ class CPU:
         # elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
-        elif op == "COMP":
+        elif op == "CMP":
             a = self.reg[reg_a]
             b = self.reg[reg_b]
 
@@ -159,6 +192,7 @@ class CPU:
         """Run the CPU."""
         while not self.op_hlt:
             ir = self.ram[self.pc]
+            print(ir)
 
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
