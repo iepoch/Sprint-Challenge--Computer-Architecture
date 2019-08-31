@@ -24,8 +24,9 @@ class CPU:
         self.pc = 0
         self.reg = [0] * 8
         self.op_hlt = False
-        self.SP = 7  # stack pointer
-        self.fl = None
+        self.SP = 0x73  # stack pointer
+        self.reg[7] = self.ram[self.SP]
+        self.fl = 0b00000000
 
         # operation dictionary
         self.ins = {
@@ -57,13 +58,13 @@ class CPU:
         b = self.reg[reg_b]
 
         if a == b:
-            self.fl = self.fl | 0b01
+            self.fl = 0b00000010
         elif a < b:
-            self.fl = self.fl | 0b100
+            self.fl = 0b00000100
         elif a > b:
-            self.fl = self.fl | 0b10
+            self.fl = 0b00000001
         else:
-            self.fl = self.fl | 0b0
+            self.fl = 0b00000000
 
     def op_halt(self, address, value):
         self.op_hlt = True
@@ -93,16 +94,12 @@ class CPU:
         self.pc = self.reg[operand_a]
 
     def op_jeq(self, operand_a, operand_b):
-        if (self.fl & 0b1):
+        if self.fl:
             self.op_jmp(operand_a, operand_b)
-        else:
-            self.pc += 2
 
     def op_jne(self, operand_a, operand_b):
-        if not (self.fl & 0b1):
+        if not self.fl:
             self.op_jmp(operand_a, operand_b)
-        else:
-            self.pc += 2
 
     def op_prn(self, address, operand_b):
         print(self.reg[address])
@@ -139,8 +136,8 @@ class CPU:
         # for instruction in program:
         #     self.ram[address] = instruction
         #     address += 1
-        self.trace()
         with open(filename) as file:
+            self.trace()
 
             for line in file:
                 comment_split = line.split('#')
