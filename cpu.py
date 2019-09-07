@@ -42,6 +42,7 @@ class CPU:
             RET: self.op_ret,
             JMP: self.op_jmp,
             JEQ: self.op_jeq,
+            JNE: self.op_jne,
             ADD: self.op_add,
             PRN: self.op_prn,
         }
@@ -101,10 +102,14 @@ class CPU:
     def op_jeq(self, operand_a, operand_b):
         if self.fl == 0b1:
             self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
 
     def op_jne(self, operand_a, operand_b):
         if self.fl != 0b1:
             self.op_jmp(operand_a, operand_b)
+        else:
+            self.pc += 2
 
     def op_prn(self, address, operand_b):
         print(self.reg[address])
@@ -194,7 +199,6 @@ class CPU:
             # self.trace()
             ir = self.ram[self.pc]
 
-            print(ir)
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
